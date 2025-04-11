@@ -13,7 +13,7 @@ import {getDocumentContent, DocumentContent} from '@/services/document-loader';
 import {transcribeAudio} from '@/services/speech-to-text';
 import {synthesizeSpeech} from '@/services/text-to-speech';
 import {toast} from '@/hooks/use-toast';
-import {FileText, Mic, Play} from 'lucide-react';
+import {FileText, Mic, Play, Share2} from 'lucide-react';
 import {Input} from '@/components/ui/input';
 
 const summaryStyles = [
@@ -170,6 +170,21 @@ export default function Home() {
     }
   };
 
+  const handleWhatsAppShare = () => {
+    if (summary) {
+      const whatsappMessage = encodeURIComponent(summary);
+      const whatsappURL = `https://wa.me/?text=${whatsappMessage}`;
+      window.open(whatsappURL, '_blank');
+    } else {
+      toast({
+        title: 'Error',
+        description: 'No summary available to share.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+
   return (
     <div className={cn(
       'flex flex-col min-h-screen bg-background text-foreground transition-colors',
@@ -209,7 +224,7 @@ export default function Home() {
                   id="file-upload"
                   className="hidden"
                   onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,.doc,.docx,.txt"
                 />
                 <Button
                   variant="outline"
@@ -267,15 +282,24 @@ export default function Home() {
             </CardHeader>
             <CardContent className="relative">
               <p style={{ whiteSpace: 'pre-line' }}>{summary}</p>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="absolute top-2 right-2"
-                onClick={handleTextToSpeech}
-                disabled={isLoading}
-              >
-                <Play className="h-4 w-4"/>
-              </Button>
+              <div className="absolute top-2 right-2 flex space-x-2">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={handleTextToSpeech}
+                  disabled={isLoading}
+                >
+                  <Play className="h-4 w-4"/>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={handleWhatsAppShare}
+                  disabled={isLoading}
+                >
+                  <Share2 className="h-4 w-4"/>
+                </Button>
+              </div>
               {audioUrl && (
                 <audio ref={audioRef} src={audioUrl} controls className="w-full mt-4"/>
               )}
