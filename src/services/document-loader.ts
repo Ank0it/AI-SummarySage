@@ -31,6 +31,14 @@ export async function getDocumentContent(file: File): Promise<DocumentContent> {
       reject(new Error('Failed to read file.'));
     };
 
-    reader.readAsText(file);
+    if (file.type === 'application/pdf') {
+      // For PDF files, attempt to load using a library like pdfjs-dist if needed.
+      // This is a placeholder; replace with actual PDF parsing logic.
+      reader.readAsDataURL(file); // Or use a PDF parsing library.
+      reject(new Error('PDF parsing not yet implemented.'));
+
+    } else {
+      reader.readAsText(file); // Try reading as plain text.
+    }
   });
 }
