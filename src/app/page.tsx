@@ -4,7 +4,6 @@ import {Textarea} from '@/components/ui/textarea';
 import {useState, useRef} from 'react';
 import {Button} from '@/components/ui/button';
 import {summarizeText} from '@/ai/flows/styled-summarization';
-import {generateRelevance} from '@/ai/flows/relevance-generator';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Label} from '@/components/ui/label';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
@@ -29,7 +28,6 @@ const summaryStyles = [
 export default function Home() {
   const [text, setText] = useState('');
   const [summary, setSummary] = useState('');
-  const [relevance, setRelevance] = useState('');
   const [style, setStyle] = useState(summaryStyles[0]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,9 +43,6 @@ export default function Home() {
         formattedSummary = summaryResult.summary.split('\n').map(item => item.trim()).filter(item => item !== '').map(item => `• ${item}`).join('\n');
       }
       setSummary(formattedSummary);
-
-      const relevanceResult = await generateRelevance({text: summaryResult.summary});
-      setRelevance(relevanceResult.relevance);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -287,19 +282,8 @@ export default function Home() {
             </CardContent>
           </Card>
         )}
-
-        {/* Relevance Generator */}
-        {relevance && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>Why It Matters</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{relevance}</p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
 }
+
