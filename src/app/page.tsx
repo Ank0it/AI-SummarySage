@@ -9,7 +9,7 @@ import {Label} from '@/components/ui/label';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {Switch} from '@/components/ui/switch';
 import {cn} from '@/lib/utils';
-import {getDocumentContent} from '@/services/document-loader';
+import {getDocumentContent, DocumentContent} from '@/services/document-loader';
 import {transcribeAudio} from '@/services/speech-to-text';
 import {synthesizeSpeech} from '@/services/text-to-speech';
 import {toast} from '@/hooks/use-toast';
@@ -59,7 +59,7 @@ export default function Home() {
     try {
       const file = e.target.files?.[0];
       if (file) {
-        const documentContent = await getDocumentContent(file);
+        const documentContent: DocumentContent = await getDocumentContent(file);
         setText(documentContent.text);
       }
     } catch (error: any) {
@@ -286,4 +286,3 @@ export default function Home() {
     </div>
   );
 }
-
