@@ -11,12 +11,10 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/c
 import {Switch} from '@/components/ui/switch';
 import {cn} from '@/lib/utils';
 import {getDocumentContent} from '@/services/document-loader';
-import {getYoutubeCaptions} from '@/services/youtube';
-import {getWebPageContent} from '@/services/webpage';
 import {transcribeAudio} from '@/services/speech-to-text';
 import {synthesizeSpeech} from '@/services/text-to-speech';
 import {toast} from '@/hooks/use-toast';
-import {FileText, Link, Mic, Play} from 'lucide-react';
+import {FileText, Mic, Play} from 'lucide-react';
 import {Input} from '@/components/ui/input';
 
 const summaryStyles = [
@@ -73,38 +71,6 @@ export default function Home() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to read file.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleYouTubeLink = async (url: string) => {
-    setIsLoading(true);
-    try {
-      const captions = await getYoutubeCaptions(url);
-      setText(captions.text);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to retrieve YouTube captions.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleWebPageLink = async (url: string) => {
-    setIsLoading(true);
-    try {
-      const webPageContent = await getWebPageContent(url);
-      setText(webPageContent.text);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to retrieve web page content.',
         variant: 'destructive',
       });
     } finally {
@@ -231,7 +197,7 @@ export default function Home() {
           <Card>
             <CardHeader>
               <CardTitle>Enter Text to Summarize</CardTitle>
-              <CardDescription>Paste text, enter URL, upload file, or speak</CardDescription>
+              <CardDescription>Paste text, or speak</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2 mb-2">
@@ -250,40 +216,6 @@ export default function Home() {
                   onChange={handleFileChange}
                   accept=".pdf,.doc,.docx"
                 />
-                <div className="relative">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Label htmlFor="youtube-link" className="sr-only">YouTube Link</Label>
-                    <Link className="mr-2 h-4 w-4"/>
-                    YouTube Link
-                  </Button>
-                  <Input
-                    type="url"
-                    id="youtube-link"
-                    className="absolute inset-0 opacity-0"
-                    placeholder="YouTube Link"
-                    onBlur={(e) => handleYouTubeLink(e.target.value)}
-                  />
-                </div>
-                <div className="relative">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Label htmlFor="webpage-link" className="sr-only">Web Page Link</Label>
-                    <Link className="mr-2 h-4 w-4"/>
-                    Web Page Link
-                  </Button>
-                  <Input
-                    type="url"
-                    id="webpage-link"
-                    className="absolute inset-0 opacity-0"
-                    placeholder="Web Page Link"
-                    onBlur={(e) => handleWebPageLink(e.target.value)}
-                  />
-                </div>
                 <Button
                   variant="outline"
                   size="sm"
