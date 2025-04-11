@@ -15,8 +15,22 @@ export interface DocumentContent {
  * @returns A promise that resolves to a DocumentContent object containing the text content.
  */
 export async function getDocumentContent(file: File): Promise<DocumentContent> {
-  // TODO: Implement this by calling an API.
-  return {
-    text: 'This is sample document content.'
-  };
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      if (event.target && event.target.result) {
+        const text = event.target.result.toString();
+        resolve({ text });
+      } else {
+        reject(new Error('Failed to read file content.'));
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error('Failed to read file.'));
+    };
+
+    reader.readAsText(file);
+  });
 }

@@ -15,8 +15,11 @@ export interface WebPageContent {
  * @returns A promise that resolves to a WebPageContent object containing the text content.
  */
 export async function getWebPageContent(url: string): Promise<WebPageContent> {
-  // TODO: Implement this by calling an API.
-  return {
-    text: 'This is sample web page content.'
-  };
+  return new Promise((resolve, reject) => {
+    // Simulate an API call with a 1-second delay
+    setTimeout(() => {
+      const sampleWebPageContent = `This is the content from the web page: ${url}.`;
+      resolve({ text: sampleWebPageContent });
+    }, 1000);
+  });
 }

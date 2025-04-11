@@ -1,7 +1,7 @@
 'use client';
 
 import {Textarea} from '@/components/ui/textarea';
-import {useState} from 'react';
+import {useState, useRef} from 'react';
 import {Button} from '@/components/ui/button';
 import {summarizeText} from '@/ai/flows/styled-summarization';
 import {generateRelevance} from '@/ai/flows/relevance-generator';
@@ -10,6 +10,14 @@ import {Label} from '@/components/ui/label';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {Switch} from '@/components/ui/switch';
 import {cn} from '@/lib/utils';
+import {getDocumentContent} from '@/services/document-loader';
+import {getYoutubeCaptions} from '@/services/youtube';
+import {getWebPageContent} from '@/services/webpage';
+import {transcribeAudio} from '@/services/speech-to-text';
+import {synthesizeSpeech} from '@/services/text-to-speech';
+import {toast} from '@/hooks/use-toast';
+import {FileText, Link, Mic, Play} from 'lucide-react';
+import {Input} from '@/components/ui/input';
 
 const summaryStyles = [
   'Formal',
@@ -26,13 +34,173 @@ export default function Home() {
   const [relevance, setRelevance] = useState('');
   const [style, setStyle] = useState(summaryStyles[0]);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const handleSummarize = async () => {
-    const summaryResult = await summarizeText({text: text, style: style});
-    setSummary(summaryResult.summary);
+    setIsLoading(true);
+    try {
+      const summaryResult = await summarizeText({text: text, style: style});
+      setSummary(summaryResult.summary);
 
-    const relevanceResult = await generateRelevance({text: summaryResult.summary});
-    setRelevance(relevanceResult.relevance);
+      const relevanceResult = await generateRelevance({text: summaryResult.summary});
+      setRelevance(relevanceResult.relevance);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to summarize text.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsLoading(true);
+    try {
+      const file = e.target.files?.[0];
+      if (file) {
+        const documentContent = await getDocumentContent(file);
+        setText(documentContent.text);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to read file.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleYouTubeLink = async (url: string) => {
+    setIsLoading(true);
+    try {
+      const captions = await getYoutubeCaptions(url);
+      setText(captions.text);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to retrieve YouTube captions.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleWebPageLink = async (url: string) => {
+    setIsLoading(true);
+    try {
+      const webPageContent = await getWebPageContent(url);
+      setText(webPageContent.text);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to retrieve web page content.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAudioRecord = () => {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+        const mediaRecorder = new MediaRecorder(stream);
+        const audioChunks: Blob[] = [];
+
+        mediaRecorder.addEventListener('dataavailable', event => {
+          audioChunks.push(event.data);
+        });
+
+        mediaRecorder.addEventListener('stop', async () => {
+          const audioBlob = new Blob(audioChunks, {type: 'audio/wav'});
+          setIsLoading(true);
+          try {
+            const transcription = await transcribeAudio(audioBlob);
+            setText(transcription.text);
+          } catch (error: any) {
+            toast({
+              title: 'Error',
+              description: error.message || 'Failed to transcribe audio.',
+              variant: 'destructive',
+            });
+          } finally {
+            setIsLoading(false);
+            // Stop all tracks to prevent indefinite recording
+            stream.getTracks().forEach(track => track.stop());
+          }
+        });
+
+        mediaRecorder.start();
+        toast({
+          title: 'Recording...',
+          description: 'Speak now, recording in progress.',
+        });
+
+        setTimeout(() => {
+          mediaRecorder.stop();
+          toast({
+            title: 'Recording stopped',
+            description: 'Audio transcription in progress.',
+          });
+        }, 5000); // Stop after 5 seconds
+      }).catch(error => {
+        toast({
+          title: 'Error',
+          description: 'Microphone access denied.',
+          variant: 'destructive',
+        });
+      });
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Media devices not supported.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleTextToSpeech = async () => {
+    if (!summary) {
+      toast({
+        title: 'Error',
+        description: 'No summary available to speak.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const speech = await synthesizeSpeech(summary);
+      const url = URL.createObjectURL(speech.audio);
+      setAudioUrl(url);
+      // Play audio automatically
+      if (audioRef.current) {
+        audioRef.current.src = url;
+        audioRef.current.play().catch(e => {
+          console.error("Playback failed:", e);
+          toast({
+            title: 'Error',
+            description: 'Automatic playback failed, please try again.',
+            variant: 'destructive',
+          });
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to synthesize speech.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -57,9 +225,62 @@ export default function Home() {
           <Card>
             <CardHeader>
               <CardTitle>Enter Text to Summarize</CardTitle>
-              <CardDescription>Paste text or enter URL</CardDescription>
+              <CardDescription>Paste text, enter URL, upload file, or speak</CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="flex space-x-2 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  <FileText className="mr-2 h-4 w-4"/>
+                  Upload File
+                </Button>
+                <Input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.docx"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                >
+                  <Label htmlFor="youtube-link" className="sr-only">YouTube Link</Label>
+                  <Link className="mr-2 h-4 w-4"/>
+                  <Input
+                    type="url"
+                    id="youtube-link"
+                    className="w-full"
+                    placeholder="YouTube Link"
+                    onBlur={(e) => handleYouTubeLink(e.target.value)}
+                  />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                >
+                  <Label htmlFor="webpage-link" className="sr-only">Web Page Link</Label>
+                  <Link className="mr-2 h-4 w-4"/>
+                  <Input
+                    type="url"
+                    id="webpage-link"
+                    className="w-full"
+                    placeholder="Web Page Link"
+                    onBlur={(e) => handleWebPageLink(e.target.value)}
+                  />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAudioRecord}
+                >
+                  <Mic className="mr-2 h-4 w-4"/>
+                  Speak
+                </Button>
+              </div>
               <Textarea
                 placeholder="Paste your text here..."
                 className="w-full"
@@ -88,8 +309,12 @@ export default function Home() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button className="mt-4 w-full" onClick={handleSummarize}>
-                Summarize
+              <Button
+                className="mt-4 w-full"
+                onClick={handleSummarize}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Summarizing...' : 'Summarize'}
               </Button>
             </CardContent>
           </Card>
@@ -101,8 +326,20 @@ export default function Home() {
             <CardHeader>
               <CardTitle>Summary</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative">
               <p>{summary}</p>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute top-2 right-2"
+                onClick={handleTextToSpeech}
+                disabled={isLoading}
+              >
+                <Play className="h-4 w-4"/>
+              </Button>
+              {audioUrl && (
+                <audio ref={audioRef} src={audioUrl} controls className="w-full mt-4"/>
+              )}
             </CardContent>
           </Card>
         )}
