@@ -8,6 +8,9 @@ export interface DocumentContent {
   text: string;
 }
 
+import {getDocument} from 'pdfjs-dist/lib/web/pdf_find_controller';
+import {PDFDocumentProxy, renderTextLayer, TextContent} from 'pdfjs-dist';
+
 /**
  * Asynchronously loads the content of a document from a file.
  *
@@ -18,10 +21,29 @@ export async function getDocumentContent(file: File): Promise<DocumentContent> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       if (event.target && event.target.result) {
-        const text = event.target.result.toString();
-        resolve({ text });
+        try {
+          let text = '';
+          if (file.type === 'application/pdf') {
+            // Load and parse PDF content
+            const pdfData = new Uint8Array(event.target.result as ArrayBuffer);
+            const pdf: PDFDocumentProxy = await getDocument(pdfData).promise;
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              text += textContent.items.map(item => (item as any).str).join(' ') + '\n';
+            }
+          } else {
+            // For other file types, read as plain text
+            text = event.target.result.toString();
+          }
+          resolve({text});
+        } catch (error: any) {
+          console.error('Error processing document:', error);
+          reject(new Error(`Failed to process document: ${error.message}`));
+        }
       } else {
         reject(new Error('Failed to read file content.'));
       }
@@ -31,14 +53,6 @@ export async function getDocumentContent(file: File): Promise<DocumentContent> {
       reject(new Error('Failed to read file.'));
     };
 
-    if (file.type === 'application/pdf') {
-      // For PDF files, attempt to load using a library like pdfjs-dist if needed.
-      // This is a placeholder; replace with actual PDF parsing logic.
-      reader.readAsDataURL(file); // Or use a PDF parsing library.
-      reject(new Error('PDF parsing not yet implemented.'));
-
-    } else {
-      reader.readAsText(file); // Try reading as plain text.
-    }
+    reader.readAsArrayBuffer(file);
   });
 }
