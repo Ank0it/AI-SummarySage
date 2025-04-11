@@ -29,11 +29,9 @@ export async function getDocumentContent(file: File): Promise<DocumentContent> {
           if (file.type === 'application/pdf') {
             // Dynamically import pdfjs-dist
             const pdfjsLib = await import('pdfjs-dist');
+
             // @ts-ignore
-            // pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).href;
-            const workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).href;
-            const blob = new Blob([`importScripts("${workerSrc}");`], { type: 'text/javascript' });
-            pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+            pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).href;
 
             // Load and parse PDF content
             const pdfData = new Uint8Array(event.target.result as ArrayBuffer);
@@ -65,4 +63,3 @@ export async function getDocumentContent(file: File): Promise<DocumentContent> {
     reader.readAsArrayBuffer(file);
   });
 }
-
