@@ -182,7 +182,9 @@ export default function Home() {
       setAudioUrl(url);
       // Play audio automatically
       if (audioRef.current) {
+        audioRef.current.pause(); // Pause current audio
         audioRef.current.src = url;
+        audioRef.current.load(); // Load the new audio
         audioRef.current.play().catch(e => {
           console.error("Playback failed:", e);
           toast({
