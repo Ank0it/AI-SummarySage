@@ -42,7 +42,11 @@ export default function Home() {
     setIsLoading(true);
     try {
       const summaryResult = await summarizeText({text: text, style: style});
-      setSummary(summaryResult.summary);
+      let formattedSummary = summaryResult.summary;
+      if (style === 'Bullet Points') {
+        formattedSummary = summaryResult.summary.split('\n').map(item => item.trim()).filter(item => item !== '').map(item => `• ${item}`).join('\n');
+      }
+      setSummary(formattedSummary);
 
       const relevanceResult = await generateRelevance({text: summaryResult.summary});
       setRelevance(relevanceResult.relevance);
@@ -211,7 +215,7 @@ export default function Home() {
       isDarkMode ? 'dark' : ''
     )}>
       <div className="container mx-auto p-4 flex-1">
-        <h1 className="text-2xl font-bold mb-4">SummarySage</h1>
+        <h1 className="text-2xl font-bold mb-4">AI SummarySage</h1>
 
         <div className="flex justify-end mb-2">
           <Label htmlFor="dark-mode" className="mr-2">Dark Mode</Label>
@@ -230,7 +234,7 @@ export default function Home() {
               <CardDescription>Paste text, enter URL, upload file, or speak</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex space-x-2 mb-2">
+              <div className="flex flex-wrap gap-2 mb-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -246,34 +250,40 @@ export default function Home() {
                   onChange={handleFileChange}
                   accept=".pdf,.doc,.docx"
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                >
-                  <Label htmlFor="youtube-link" className="sr-only">YouTube Link</Label>
-                  <Link className="mr-2 h-4 w-4"/>
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Label htmlFor="youtube-link" className="sr-only">YouTube Link</Label>
+                    <Link className="mr-2 h-4 w-4"/>
+                    YouTube Link
+                  </Button>
                   <Input
                     type="url"
                     id="youtube-link"
-                    className="w-full"
+                    className="absolute inset-0 opacity-0"
                     placeholder="YouTube Link"
                     onBlur={(e) => handleYouTubeLink(e.target.value)}
                   />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                >
-                  <Label htmlFor="webpage-link" className="sr-only">Web Page Link</Label>
-                  <Link className="mr-2 h-4 w-4"/>
+                </div>
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Label htmlFor="webpage-link" className="sr-only">Web Page Link</Label>
+                    <Link className="mr-2 h-4 w-4"/>
+                    Web Page Link
+                  </Button>
                   <Input
                     type="url"
                     id="webpage-link"
-                    className="w-full"
+                    className="absolute inset-0 opacity-0"
                     placeholder="Web Page Link"
                     onBlur={(e) => handleWebPageLink(e.target.value)}
                   />
-                </Button>
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
@@ -329,7 +339,7 @@ export default function Home() {
               <CardTitle>Summary</CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <p>{summary}</p>
+              <p style={{ whiteSpace: 'pre-line' }}>{summary}</p>
               <Button
                 variant="secondary"
                 size="icon"
