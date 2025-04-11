@@ -147,17 +147,23 @@ export default function Home() {
       setAudioUrl(url);
       // Play audio automatically
       if (audioRef.current) {
-        audioRef.current.pause(); // Pause current audio
-        audioRef.current.src = url;
-        audioRef.current.load(); // Load the new audio
-        audioRef.current.play().catch(e => {
-          console.error("Playback failed:", e);
-          toast({
-            title: 'Error',
-            description: 'Automatic playback failed, please try again.',
-            variant: 'destructive',
+        const audioElement = audioRef.current;
+        // Remove previous listener if exists
+        audioElement.removeEventListener('loadeddata', handleLoadedData);
+        
+        // Handle loaded data
+        function handleLoadedData() {
+          audioElement.play().catch((e) => {
+            console.error("Playback failed:", e);
+            toast({
+              title: 'Error',
+              description: 'Automatic playback failed, please try again.',
+              variant: 'destructive',
+            });
           });
-        });
+        }
+        audioElement.addEventListener('loadeddata', handleLoadedData);
+        audioRef.current.src = url;
       }
     } catch (error: any) {
       toast({
@@ -170,17 +176,26 @@ export default function Home() {
     }
   };
 
-  const handleWhatsAppShare = () => {
-    if (summary) {
-      const whatsappMessage = encodeURIComponent(summary);
-      const whatsappURL = `https://wa.me/?text=${whatsappMessage}`;
-      window.open(whatsappURL, '_blank');
-    } else {
+ const handleWhatsAppShare = () => {
+    const textToShare = 'Hello World';
+    const whatsappMessage = encodeURIComponent(textToShare);
+    const whatsappURL = `https://wa.me/?text=${whatsappMessage}`;
+
+    // Open the WhatsApp share link and check if it was blocked by a popup blocker
+    const popup = window.open(whatsappURL, '_blank');
+
+    if (!popup || popup.closed || typeof popup.closed == 'undefined') {
+      // Popup blocked
       toast({
         title: 'Error',
-        description: 'No summary available to share.',
+        description: 'Popup blocked! Please allow popups for this site to use the share function.',
         variant: 'destructive',
       });
+    } else {
+      // Popup opened successfully
+      console.log('WhatsApp share popup opened.');
+      // Optionally, you can close the popup after a short delay if desired
+      // setTimeout(() => popup.close(), 5000);
     }
   };
 

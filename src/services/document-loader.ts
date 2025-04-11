@@ -31,7 +31,7 @@ export async function getDocumentContent(file: File): Promise<DocumentContent> {
             const pdfjsLib = await import('pdfjs-dist');
 
             // @ts-ignore
-            pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 
             // Load and parse PDF content
             const pdfData = new Uint8Array(event.target.result as ArrayBuffer);
