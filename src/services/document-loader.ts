@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Represents the content of a document.
  */
@@ -8,8 +10,7 @@ export interface DocumentContent {
   text: string;
 }
 
-import {getDocument} from 'pdfjs-dist/lib/web/pdf_find_controller';
-import {PDFDocumentProxy, renderTextLayer, TextContent} from 'pdfjs-dist';
+import {PDFDocumentProxy, TextContent} from 'pdfjs-dist';
 
 /**
  * Asynchronously loads the content of a document from a file.
@@ -26,13 +27,20 @@ export async function getDocumentContent(file: File): Promise<DocumentContent> {
         try {
           let text = '';
           if (file.type === 'application/pdf') {
+            // Dynamically import pdfjs-dist
+            const pdfjsLib = await import('pdfjs-dist');
+            // @ts-ignore
+            pdfjsLib.GlobalWorkerOptions.workerSrc = window.URL.createObjectURL(
+              new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url)
+            );
+
             // Load and parse PDF content
             const pdfData = new Uint8Array(event.target.result as ArrayBuffer);
-            const pdf: PDFDocumentProxy = await getDocument(pdfData).promise;
+            const pdf: PDFDocumentProxy = await pdfjsLib.getDocument(pdfData).promise;
 
             for (let i = 1; i <= pdf.numPages; i++) {
               const page = await pdf.getPage(i);
-              const textContent = await page.getTextContent();
+              const textContent = await page.getTextContent() as TextContent;
               text += textContent.items.map(item => (item as any).str).join(' ') + '\n';
             }
           } else {
