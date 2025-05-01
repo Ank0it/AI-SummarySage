@@ -177,7 +177,7 @@ export default function Home() {
   };
 
  const handleWhatsAppShare = () => {
-    const textToShare = 'Hello World';
+    const textToShare = summary || 'No summary available.';
     const whatsappMessage = encodeURIComponent(textToShare);
     const whatsappURL = `https://wa.me/?text=${whatsappMessage}`;
 
