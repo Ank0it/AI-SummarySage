@@ -28,8 +28,8 @@ const summaryStyles = [
 export default function Home() {
   const [text, setText] = useState('');
   const [summary, setSummary] = useState('');
-  const [style, setStyle] = useState(summaryStyles[0]);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [style, setStyle] = useState<typeof summaryStyles[number]>(summaryStyles[0]);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -266,7 +266,7 @@ export default function Home() {
               <CardDescription>Choose the style of the summary</CardDescription>
             </CardHeader>
             <CardContent>
-              <Select onValueChange={setStyle} defaultValue={style}>
+              <Select onValueChange={(value) => setStyle(value as typeof summaryStyles[number])} defaultValue={style}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a style"/>
                 </SelectTrigger>

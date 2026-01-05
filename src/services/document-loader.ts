@@ -1,65 +1,59 @@
 'use client';
 
-/**
- * Represents the content of a document.
- */
+import type {
+  PDFDocumentProxy,
+  TextContent,
+} from 'pdfjs-dist/types/src/display/api';
+
 export interface DocumentContent {
-  /**
-   * The text content of the document.
-   */
   text: string;
 }
 
-import {PDFDocumentProxy, TextContent} from 'pdfjs-dist';
-
-/**
- * Asynchronously loads the content of a document from a file.
- *
- * @param file The document file.
- * @returns A promise that resolves to a DocumentContent object containing the text content.
- */
-export async function getDocumentContent(file: File): Promise<DocumentContent> {
+export async function getDocumentContent(
+  file: File
+): Promise<DocumentContent> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = async (event) => {
-      if (event.target && event.target.result) {
-        try {
-          let text = '';
-          if (file.type === 'application/pdf') {
-            // Dynamically import pdfjs-dist
-            const pdfjsLib = await import('pdfjs-dist');
+    reader.onload = async () => {
+      try {
+        let text = '';
 
-            // @ts-ignore
-            pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+        if (file.type === 'application/pdf') {
+          const pdfjsLib = await import('pdfjs-dist/build/pdf');
 
-            // Load and parse PDF content
-            const pdfData = new Uint8Array(event.target.result as ArrayBuffer);
-            const pdf: PDFDocumentProxy = await pdfjsLib.getDocument(pdfData).promise;
+          const pdfData = new Uint8Array(reader.result as ArrayBuffer);
 
-            for (let i = 1; i <= pdf.numPages; i++) {
-              const page = await pdf.getPage(i);
-              const textContent = await page.getTextContent() as TextContent;
-              text += textContent.items.map(item => (item as any).str).join(' ') + '\n';
-            }
-          } else {
-            // For other file types, read as plain text
-            text = event.target.result.toString();
+          const pdf: PDFDocumentProxy = await pdfjsLib
+            .getDocument({
+              data: pdfData,
+              disableWorker: true, // safe for text extraction
+            })
+            .promise;
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = (await page.getTextContent()) as TextContent;
+
+            text += content.items
+              .map((item: any) => item.str)
+              .join(' ') + '\n';
           }
-          resolve({text});
-        } catch (error: any) {
-          console.error('Error processing document:', error);
-          reject(new Error(`Failed to process document: ${error.message}`));
+        } else {
+          text = reader.result as string;
         }
-      } else {
-        reject(new Error('Failed to read file content.'));
+
+        resolve({ text });
+      } catch (err) {
+        console.error('PDF processing error:', err);
+        reject(new Error('Failed to process document'));
       }
     };
 
-    reader.onerror = () => {
-      reject(new Error('Failed to read file.'));
-    };
+    reader.onerror = () => reject(new Error('File reading failed'));
 
-    reader.readAsArrayBuffer(file);
+    file.type === 'application/pdf'
+      ? reader.readAsArrayBuffer(file)
+      : reader.readAsText(file);
   });
 }
