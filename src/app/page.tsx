@@ -1,9 +1,8 @@
-'use client';
+"use client";
 
 import {Textarea} from '@/components/ui/textarea';
 import {useState, useRef} from 'react';
 import {Button} from '@/components/ui/button';
-import {summarizeText} from '@/ai/flows/styled-summarization';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Label} from '@/components/ui/label';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
@@ -37,10 +36,21 @@ export default function Home() {
   const handleSummarize = async () => {
     setIsLoading(true);
     try {
-      const summaryResult = await summarizeText({text: text, style: style});
+      const res = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, style }),
+      });
+      if (!res.ok) throw new Error('Failed to summarize text.');
+      const summaryResult = await res.json();
       let formattedSummary = summaryResult.summary;
       if (style === 'Bullet Points') {
-        formattedSummary = summaryResult.summary.split('\n').map(item => item.trim()).filter(item => item !== '').map(item => `• ${item}`).join('\n');
+        formattedSummary = summaryResult.summary
+          .split('\n')
+          .map((item: string) => item.trim())
+          .filter((item: string) => item !== '')
+          .map((item: string) => `• ${item}`)
+          .join('\n');
       }
       setSummary(formattedSummary);
     } catch (error: any) {
