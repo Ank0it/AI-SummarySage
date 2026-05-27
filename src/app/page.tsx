@@ -33,6 +33,10 @@ export default function Home() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  const isSummaryResponse = (value: unknown): value is { summary: string } => {
+    return typeof value === 'object' && value !== null && typeof (value as { summary?: unknown }).summary === 'string';
+  };
+
   const handleSummarize = async () => {
     setIsLoading(true);
     try {
@@ -41,8 +45,35 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, style }),
       });
-      if (!res.ok) throw new Error('Failed to summarize text.');
-      const summaryResult = await res.json();
+
+      const responseBody = await res.json().catch(() => null) as { summary?: unknown; error?: unknown } | null;
+
+      if (!res.ok) {
+        if (res.status === 429) {
+          toast({
+            title: 'Rate limit exceeded',
+            description: 'You have generated 5 summaries within 1 hour. Please try after 1 hour.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        toast({
+          title: 'Error',
+          description: typeof responseBody?.error === 'string' && responseBody.error.trim().length > 0
+            ? responseBody.error
+            : 'Failed to summarize text.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const summaryResult = isSummaryResponse(responseBody) ? responseBody : null;
+
+      if (!summaryResult) {
+        throw new Error('Failed to summarize text.');
+      }
+
       let formattedSummary = summaryResult.summary;
       if (style === 'Bullet Points') {
         formattedSummary = summaryResult.summary
