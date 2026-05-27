@@ -14,7 +14,6 @@ permissions:
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'ap-south-1' }}
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'gistly' }}
-  APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }}
 
 jobs:
   build-and-push:
@@ -24,6 +23,16 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Validate AWS deployment configuration
+        run: |
+          if [ -z "$AWS_ROLE_ARN" ]; then
+            echo "AWS_ROLE_ARN repository secret is required."
+            echo "Create an IAM role trusted by GitHub OIDC, then add its ARN as a GitHub Actions secret named AWS_ROLE_ARN."
+            exit 1
+          fi
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -52,5 +61,12 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
 
       - name: Start App Runner deployment
-        if: ${{ env.APP_RUNNER_SERVICE_ARN != '' }}
-        run: aws apprunner start-deployment --service-arn "$APP_RUNNER_SERVICE_ARN"
+        run: |
+          if [ -z "$APP_RUNNER_SERVICE_ARN" ]; then
+            echo "APP_RUNNER_SERVICE_ARN is not set; image push complete, skipping App Runner deployment trigger."
+            exit 0
+          fi
+
+          aws apprunner start-deployment --service-arn "$APP_RUNNER_SERVICE_ARN"
+        env:
+          APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }}
