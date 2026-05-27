@@ -61,6 +61,28 @@ docker compose up --build
 
 For AWS App Runner, set `GOOGLE_GENAI_API_KEY` in the service environment variables. The app listens on port `3000` inside the container. The in-memory rate limiter is scoped to each container instance.
 
+## AWS App Runner Deployment
+
+This repo includes a GitHub Actions workflow that builds the Docker image in GitHub Actions, pushes it to Amazon ECR, and can trigger an AWS App Runner deployment.
+
+Create these GitHub repository variables:
+
+- `AWS_REGION`: `ap-south-1`
+- `ECR_REPOSITORY`: `gistly`
+
+Create these GitHub repository secrets:
+
+- `AWS_ROLE_ARN`: IAM role ARN trusted by GitHub OIDC for this repository
+- `APP_RUNNER_SERVICE_ARN`: App Runner service ARN, optional until the service exists
+
+AWS resources to create before the first deploy:
+
+- ECR private repository: `gistly`
+- IAM role for GitHub Actions with permission to push to ECR and start App Runner deployments
+- App Runner service using the ECR image after the first workflow push
+
+Configure App Runner with container port `3000`, health check path `/`, and `GOOGLE_GENAI_API_KEY` as a service environment variable.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTING.md) before submitting a pull request.
