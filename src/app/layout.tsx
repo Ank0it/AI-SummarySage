@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'AI-SummarySage',
-  description: 'Build to summarize text in different text style and make it sharable on whatsapp',
+  title: 'Gistly',
+  description: 'Gistly turns long text, files, and spoken ideas into clear summaries in your chosen style.',
 };
 
 export default function RootLayout({

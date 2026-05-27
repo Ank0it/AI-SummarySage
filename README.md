@@ -1,6 +1,6 @@
-# AI SummarySage ✨📝
+# Gistly ✨📝
 
-What if your notes wrote themselves? Turn walls of text into “aha!” moments with a tap. AI SummarySage uses Google’s Gemini to shape ideas into summaries that feel tailor-made — formal, funny, poetic, and everything in between.
+What if your notes wrote themselves? Turn walls of text into “aha!” moments with a tap. Gistly uses Google’s Gemini to shape ideas into summaries that feel tailor-made — formal, funny, poetic, and everything in between.
 
 ## Why You’ll Love It
 
@@ -21,8 +21,8 @@ What if your notes wrote themselves? Turn walls of text into “aha!” moments 
 
 1) Clone the repo
 ```bash
-git clone https://github.com/Ank0it/AI-SummarySage.git
-cd AI-SummarySage
+git clone https://github.com/Ank0it/Gistly.git
+cd Gistly
 ```
 2) Install dependencies
 ```bash
