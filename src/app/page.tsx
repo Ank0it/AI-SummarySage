@@ -247,7 +247,7 @@ export default function Home() {
       isDarkMode ? 'dark' : ''
     )}>
       <div className="container mx-auto p-4 flex-1">
-        <h1 className="text-2xl font-bold mb-4">AI SummarySage</h1>
+        <h1 className="text-2xl font-bold mb-4">Gistly</h1>
 
         <div className="flex justify-end mb-2">
           <Label htmlFor="dark-mode" className="mr-2">Dark Mode</Label>
