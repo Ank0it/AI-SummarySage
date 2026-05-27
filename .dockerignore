@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+npm-debug.log*
+Dockerfile
+.dockerignore
+README.md
+.env
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.log
+tsconfig.tsbuildinfo
