@@ -55,3 +55,6 @@ firestore-debug.log
 
 # Genkit
 .genkit/
+
+# clerk configuration (can include secrets)
+/.clerk/
