@@ -14,6 +14,11 @@ export interface RateLimitResult {
   limit: number;
 }
 
+export interface RateLimitOptions {
+  identifier?: string | null;
+  now?: number;
+}
+
 const buckets = new Map<string, Bucket>();
 let lastCleanupAt = Date.now();
 
@@ -27,6 +32,10 @@ function parseForwardedFor(headers: Headers): string | null {
 
 export function getClientIdentifier(headers: Headers): string {
   return parseForwardedFor(headers) || headers.get('x-real-ip')?.trim() || 'local';
+}
+
+export function getRateLimitIdentifier(headers: Headers, identifier?: string | null): string {
+  return identifier?.trim() ? `user:${identifier.trim()}` : getClientIdentifier(headers);
 }
 
 function cleanupExpiredBuckets(now: number) {
@@ -45,10 +54,11 @@ function cleanupExpiredBuckets(now: number) {
   lastCleanupAt = now;
 }
 
-export function rateLimitRequest(headers: Headers, now: number = Date.now()): RateLimitResult {
+export function rateLimitRequest(headers: Headers, options: RateLimitOptions = {}): RateLimitResult {
+  const now = options.now ?? Date.now();
   cleanupExpiredBuckets(now);
 
-  const clientId = getClientIdentifier(headers);
+  const clientId = getRateLimitIdentifier(headers, options.identifier);
   const cutoff = now - WINDOW_MS;
   const timestamps = buckets.get(clientId) || [];
   const active = timestamps.filter((timestamp) => timestamp > cutoff);

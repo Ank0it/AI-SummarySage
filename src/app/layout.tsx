@@ -1,4 +1,5 @@
 import type {Metadata} from 'next';
+import {ClerkProvider} from '@clerk/nextjs';
 import {Geist, Geist_Mono} from 'next/font/google';
 import {Toaster} from '@/components/ui/toaster';
 import './globals.css';
@@ -26,8 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <Toaster />
+        <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+          {children}
+          <Toaster />
+        </ClerkProvider>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { summarizeText } from '@/ai/flows/styled-summarization';
 import { rateLimitRequest } from '@/lib/rate-limit';
 
@@ -10,6 +11,12 @@ function isSummaryStyle(value: unknown): value is typeof summaryStyles[number] {
 
 export async function POST(req: NextRequest) {
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return Response.json({ error: 'Please sign in to generate summaries.' }, { status: 401 });
+    }
+
     let body: unknown;
 
     try {
@@ -29,7 +36,7 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: 'Style must be one of Formal, Casual, Bullet Points, Funny, Poetic, Gen-Z.' }, { status: 400 });
     }
 
-    const rateLimit = rateLimitRequest(req.headers);
+    const rateLimit = rateLimitRequest(req.headers, { identifier: userId });
     const rateLimitHeaders = {
       'Retry-After': String(rateLimit.retryAfter),
       'X-RateLimit-Limit': String(rateLimit.limit),
