@@ -50,7 +50,11 @@ docker build -t gistly .
 Run the container locally:
 
 ```bash
-docker run --rm -p 9002:3000 -e GOOGLE_GENAI_API_KEY=your_key_here gistly
+docker run --rm -p 9002:3000 \
+  -e NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key_here \
+  -e CLERK_SECRET_KEY=your_secret_key_here \
+  -e GOOGLE_GENAI_API_KEY=your_key_here \
+  gistly
 ```
 
 Use Docker Compose for local production testing:
@@ -59,7 +63,15 @@ Use Docker Compose for local production testing:
 docker compose up --build
 ```
 
-For AWS App Runner, set `GOOGLE_GENAI_API_KEY` in the service environment variables. The app listens on port `3000` inside the container. The in-memory rate limiter is scoped to each container instance.
+For Docker and AWS App Runner, set these environment variables on the host or service:
+
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+- `GOOGLE_GENAI_API_KEY`
+
+The Clerk publishable key is safe to expose to the client, but it still needs to be available to the app at runtime. The Docker image does not bake in any Clerk or Gemini secrets.
+
+For AWS App Runner, set all three variables in the service environment. The app listens on port `3000` inside the container. The in-memory rate limiter is scoped to each container instance.
 
 ## AWS App Runner Deployment
 
@@ -82,6 +94,8 @@ AWS resources to create before the first deploy:
 - App Runner service using the ECR image after the first workflow push
 
 Configure App Runner with container port `3000`, health check path `/`, and `GOOGLE_GENAI_API_KEY` as a service environment variable.
+
+If you enable Clerk authentication, App Runner also needs `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` configured on the service. Make sure the publishable key is available when the app runs so the client bundle can initialize Clerk correctly.
 
 ## 🤝 Contributing
 

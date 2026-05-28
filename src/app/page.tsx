@@ -1,5 +1,6 @@
 "use client";
 
+import {UserButton, useUser} from '@clerk/nextjs';
 import {Textarea} from '@/components/ui/textarea';
 import {useState, useRef} from 'react';
 import {Button} from '@/components/ui/button';
@@ -25,6 +26,7 @@ const summaryStyles = [
 ] as const;
 
 export default function Home() {
+  const {user} = useUser();
   const [text, setText] = useState('');
   const [summary, setSummary] = useState('');
   const [style, setStyle] = useState<typeof summaryStyles[number]>(summaryStyles[0]);
@@ -49,6 +51,15 @@ export default function Home() {
       const responseBody = await res.json().catch(() => null) as { summary?: unknown; error?: unknown } | null;
 
       if (!res.ok) {
+        if (res.status === 401) {
+          toast({
+            title: 'Sign in required',
+            description: 'Please sign in to generate summaries.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
         if (res.status === 429) {
           toast({
             title: 'Rate limit exceeded',
@@ -247,7 +258,26 @@ export default function Home() {
       isDarkMode ? 'dark' : ''
     )}>
       <div className="container mx-auto p-4 flex-1">
-        <h1 className="text-2xl font-bold mb-4">Gistly</h1>
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Gistly</h1>
+            {user ? (
+              <p className="text-sm text-muted-foreground">
+                {user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Signed in'}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {user ? (
+              <UserButton />
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <a href="/sign-in">Sign in</a>
+              </Button>
+            )}
+          </div>
+        </div>
 
         <div className="flex justify-end mb-2">
           <Label htmlFor="dark-mode" className="mr-2">Dark Mode</Label>

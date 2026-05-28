@@ -36,9 +36,18 @@ export async function summarizeText(input: SummarizeTextInput): Promise<Summariz
   const txt = input.text?.trim();
   if (!txt) return { summary: 'Please provide text to summarize.' };
 
+  const fallbackSummary = () => {
+    const fallback = localSummarize(txt, input.style);
+    return { summary: `Local summary:\n\n${fallback}` };
+  };
+
   try {
     const { output } = await prompt(input);
-    return output!;
+    if (!output?.summary?.trim()) {
+      return fallbackSummary();
+    }
+
+    return output;
   } catch (error: any) {
     const status = error?.status || error?.code;
     const msg = error?.originalMessage || error?.message || '';
@@ -54,7 +63,11 @@ export async function summarizeText(input: SummarizeTextInput): Promise<Summariz
       await sleep(waitMs);
       try {
         const { output } = await prompt(input);
-        return output!;
+        if (!output?.summary?.trim()) {
+          return fallbackSummary();
+        }
+
+        return output;
       } catch {
         const fallback = localSummarize(txt, input.style);
         return { summary: `Rate limit hit. Try again later.\n\nLocal summary:\n\n${fallback}` };
@@ -62,10 +75,9 @@ export async function summarizeText(input: SummarizeTextInput): Promise<Summariz
     }
 
     // Model/key issues: return local summary instead of throwing 500
-    const fallback = localSummarize(txt, input.style);
     const label = /API key not valid|Model .* not found/i.test(msg)
       ? 'Model/API key issue'
       : 'Unexpected error';
-    return { summary: `${label}. Showing local summary:\n\n${fallback}` };
+    return { summary: `${label}. Showing local summary:\n\n${localSummarize(txt, input.style)}` };
   }
 }
