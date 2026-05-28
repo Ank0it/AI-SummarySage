@@ -25,6 +25,28 @@ const summaryStyles = [
   'Gen-Z',
 ] as const;
 
+function GistlyIcon({className = ''}: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M7 3.75h7.75L18.25 7.25V20.25H7z" />
+      <path d="M14.75 3.75v3.5h3.5" />
+      <path d="M9.25 10.25h5.5" />
+      <path d="M9.25 13.25h4.1" />
+      <path d="M9.25 16.25h2.7" />
+      <path d="M17.25 10.2l.42 1.08 1.08.42-1.08.42-.42 1.08-.42-1.08-1.08-.42 1.08-.42z" />
+    </svg>
+  );
+}
+
 export default function Home() {
   const {user} = useUser();
   const [text, setText] = useState('');
@@ -259,13 +281,18 @@ export default function Home() {
     )}>
       <div className="container mx-auto p-4 flex-1">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Gistly</h1>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-background text-foreground shadow-sm">
+              <GistlyIcon className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Gistly</h1>
             {user ? (
               <p className="text-sm text-muted-foreground">
                 {user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Signed in'}
               </p>
             ) : null}
+            </div>
           </div>
 
           <div className="flex items-center gap-3">

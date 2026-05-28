@@ -17,6 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Gistly',
   description: 'Gistly turns long text, files, and spoken ideas into clear summaries in your chosen style.',
+  icons: {
+    icon: '/gistly-icon.svg',
+    shortcut: '/gistly-icon.svg',
+  },
 };
 
 export default function RootLayout({
