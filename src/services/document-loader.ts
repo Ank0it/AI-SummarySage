@@ -6,6 +6,8 @@ export interface DocumentContent {
   text: string;
 }
 
+let pdfWorker: Worker | null = null;
+
 function isPdfFile(file: File): boolean {
   return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 }
@@ -57,7 +59,9 @@ export async function getDocumentContent(
 ): Promise<DocumentContent> {
   if (isPdfFile(file)) {
     const pdfjsLib = await import('pdfjs-dist/build/pdf');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+    const workerSrc = new URL('/pdf.worker.mjs', window.location.origin).toString();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+    pdfjsLib.GlobalWorkerOptions.workerPort ||= pdfWorker ||= new Worker(workerSrc);
 
     try {
       const pdfData = await file.arrayBuffer();

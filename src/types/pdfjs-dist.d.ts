@@ -5,6 +5,7 @@ declare module 'pdfjs-dist/build/pdf' {
 
   export const GlobalWorkerOptions: {
     workerSrc: string;
+    workerPort: Worker | null;
   };
 
   export interface DocumentInitParameters {
