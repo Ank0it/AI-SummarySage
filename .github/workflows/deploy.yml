@@ -1,10 +1,7 @@
 name: Deploy to AWS App Runner
 
 on:
-  push:
-    branches:
-      - main
-      - master
+  # Enable push trigger after AWS_ROLE_ARN and ECR/App Runner are configured.
   workflow_dispatch:
 
 permissions:
@@ -19,19 +16,15 @@ jobs:
   build-and-push:
     name: Build and push container
     runs-on: ubuntu-latest
-<<<<<<< rate-limiting
     env:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN || vars.AWS_ROLE_ARN }}
       APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN || vars.APP_RUNNER_SERVICE_ARN }}
-=======
->>>>>>> master
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Validate AWS deployment configuration
-<<<<<<< rate-limiting
         id: validate
         shell: bash
         run: |
@@ -54,32 +47,11 @@ jobs:
 
       - name: Log in to Amazon ECR
         if: ${{ steps.validate.outputs.configured == 'true' }}
-=======
-        run: |
-          if [ -z "$AWS_ROLE_ARN" ]; then
-            echo "AWS_ROLE_ARN repository secret is required."
-            echo "Create an IAM role trusted by GitHub OIDC, then add its ARN as a GitHub Actions secret named AWS_ROLE_ARN."
-            exit 1
-          fi
-        env:
-          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Log in to Amazon ECR
->>>>>>> master
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build image
-<<<<<<< rate-limiting
         if: ${{ steps.validate.outputs.configured == 'true' }}
-=======
->>>>>>> master
         run: |
           docker build \
             --tag "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
@@ -89,10 +61,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
 
       - name: Push image
-<<<<<<< rate-limiting
         if: ${{ steps.validate.outputs.configured == 'true' }}
-=======
->>>>>>> master
         run: |
           docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
           docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA"
@@ -100,21 +69,12 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
 
       - name: Start App Runner deployment
-<<<<<<< rate-limiting
         if: ${{ steps.validate.outputs.configured == 'true' }}
         shell: bash
-=======
->>>>>>> master
         run: |
           if [ -z "$APP_RUNNER_SERVICE_ARN" ]; then
             echo "APP_RUNNER_SERVICE_ARN is not set; image push complete, skipping App Runner deployment trigger."
             exit 0
           fi
 
-<<<<<<< rate-limiting
           aws apprunner start-deployment --service-arn "$APP_RUNNER_SERVICE_ARN"
-=======
-          aws apprunner start-deployment --service-arn "$APP_RUNNER_SERVICE_ARN"
-        env:
-          APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }}
->>>>>>> master
