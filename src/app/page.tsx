@@ -390,12 +390,9 @@ export default function Home() {
         {/* Summary Display */}
         {summary && (
           <Card className="mt-4">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-start justify-between gap-4">
               <CardTitle>Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p style={{ whiteSpace: 'pre-line' }}>{summary}</p>
-              <div className="absolute top-2 right-2 flex space-x-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
                 <Button
                   variant="secondary"
                   size="icon"
@@ -413,6 +410,9 @@ export default function Home() {
                   <Share2 className="h-4 w-4"/>
                 </Button>
               </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="whitespace-pre-line break-words">{summary}</p>
               {audioUrl && (
                 <audio ref={audioRef} src={audioUrl} controls className="w-full mt-4"/>
               )}
