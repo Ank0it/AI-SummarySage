@@ -3,6 +3,10 @@ declare module 'pdfjs-dist/build/pdf' {
     PDFDocumentProxy,
   } from 'pdfjs-dist/types/src/display/api';
 
+  export const GlobalWorkerOptions: {
+    workerSrc: string;
+  };
+
   export interface DocumentInitParameters {
     data?: Uint8Array | ArrayBuffer;
     url?: string;
