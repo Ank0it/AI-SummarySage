@@ -2,7 +2,7 @@
 
 import {UserButton, useUser} from '@clerk/nextjs';
 import {Textarea} from '@/components/ui/textarea';
-import {useState, useRef} from 'react';
+import {useEffect, useState} from 'react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Label} from '@/components/ui/label';
@@ -11,7 +11,6 @@ import {Switch} from '@/components/ui/switch';
 import {cn} from '@/lib/utils';
 import {getDocumentContent, DocumentContent} from '@/services/document-loader';
 import {transcribeAudio} from '@/services/speech-to-text';
-import {synthesizeSpeech} from '@/services/text-to-speech';
 import {toast} from '@/hooks/use-toast';
 import {FileText, Mic, Play, Share2} from 'lucide-react';
 import {Input} from '@/components/ui/input';
@@ -54,12 +53,19 @@ export default function Home() {
   const [style, setStyle] = useState<typeof summaryStyles[number]>(summaryStyles[0]);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const isSummaryResponse = (value: unknown): value is { summary: string } => {
     return typeof value === 'object' && value !== null && typeof (value as { summary?: unknown }).summary === 'string';
   };
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const handleSummarize = async () => {
     setIsLoading(true);
@@ -206,7 +212,9 @@ export default function Home() {
   };
 
   const handleTextToSpeech = async () => {
-    if (!summary) {
+    const trimmedSummary = summary.trim();
+
+    if (!trimmedSummary) {
       toast({
         title: 'Error',
         description: 'No summary available to speak.',
@@ -214,39 +222,37 @@ export default function Home() {
       });
       return;
     }
-    setIsLoading(true);
-    try {
-      const speech = await synthesizeSpeech(summary);
-      const url = URL.createObjectURL(speech.audio);
-      setAudioUrl(url);
-      // Play audio automatically
-      if (audioRef.current) {
-        const audioElement = audioRef.current;
-        // Remove previous listener if exists
-        audioElement.removeEventListener('loadeddata', handleLoadedData);
-        
-        // Handle loaded data
-        function handleLoadedData() {
-          audioElement.play().catch((e) => {
-            console.error("Playback failed:", e);
-            toast({
-              title: 'Error',
-              description: 'Automatic playback failed, please try again.',
-              variant: 'destructive',
-            });
-          });
-        }
-        audioElement.addEventListener('loadeddata', handleLoadedData);
-        audioRef.current.src = url;
-      }
-    } catch (error: any) {
+
+    if (typeof window === 'undefined' || !('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to synthesize speech.',
+        description: 'Text-to-speech is not supported in this browser.',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    try {
+      if (window.speechSynthesis.speaking || isSpeaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(trimmedSummary);
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    } catch (error: any) {
+      setIsSpeaking(false);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to speak summary.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -398,6 +404,8 @@ export default function Home() {
                   size="icon"
                   onClick={handleTextToSpeech}
                   disabled={isLoading}
+                  aria-pressed={isSpeaking}
+                  title={isSpeaking ? 'Stop speaking summary' : 'Speak summary'}
                 >
                   <Play className="h-4 w-4"/>
                 </Button>
@@ -413,9 +421,6 @@ export default function Home() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="whitespace-pre-line break-words">{summary}</p>
-              {audioUrl && (
-                <audio ref={audioRef} src={audioUrl} controls className="w-full mt-4"/>
-              )}
             </CardContent>
           </Card>
         )}
